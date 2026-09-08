@@ -172,6 +172,22 @@ body {
     font-size: 13px;
 }
 
+.EmulatorWindow .WindowBody {
+    display: flex;
+    padding: 0;
+    overflow: hidden;
+    background: #0d0d0d;
+}
+
+.EmulatorFrame {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 420px;
+    border: 0;
+    background: #0d0d0d;
+}
+
 /* resize handle */
 
 .ResizeHandle {
@@ -308,6 +324,7 @@ body {
     </div>
 
     <div id="dock" class="dock-glass">
+        <div class="DockIcon" onclick="openEmulator()">A</div>
         <div class="DockIcon" onclick="createWindow('Notes','Notes app coming soon.')">N</div>
         <div class="DockIcon" onclick="openCalculator()">C</div>
         <div class="DockIcon" onclick="createWindow('Settings','Settings panel coming soon.')">S</div>
@@ -324,13 +341,14 @@ body {
             <span>Tap outside to close</span>
         </div>
         <div class="LauncherGrid">
+            <div class="AppIcon" onclick="openEmulator()">Alpine Linux</div>
             <div class="AppIcon" onclick="createWindow('Notes','Notes app coming soon.')">Notes</div>
             <div class="AppIcon" onclick="openCalculator()">Calculator</div>
             <div class="AppIcon" onclick="createWindow('Settings','Settings panel coming soon.')">Settings</div>
             <div class="AppIcon" onclick="createWindow('Gallery','Gallery app coming soon.')">Gallery</div>
             <div class="AppIcon" onclick="createWindow('Null','Null app placeholder.')">Null</div>
             <div class="AppIcon" onclick="createWindow('Null','Null app placeholder.')">Null</div>
-            <div class="AppIcon" onclick="createWindow('Terminal','Terminal coming soon.')">Terminal</div>
+            <div class="AppIcon" onclick="openEmulator()">Terminal</div>
             <div class="AppIcon" onclick="createWindow('About','WebPopcorn OS prototype.')">About</div>
         </div>
     </div>
@@ -444,6 +462,18 @@ launcher.onclick = (e) => {
 function openCalculator() {
     const content = '<iframe src="https://www.desmos.com/calculator" style="width:100%;height:100%;border:none;border-radius:12px;"></iframe>';
     createWindow("Calculator", content);
+}
+
+function openEmulator() {
+    launcher.classList.remove("active");
+    const content = '<iframe class="EmulatorFrame" src="/html/apps/emulator_alpine/index.html" title="Alpine Linux emulator" allow="fullscreen"></iframe>';
+    const win = createWindow("Alpine Linux", content);
+
+    win.classList.add("EmulatorWindow");
+    win.style.width = Math.min(window.innerWidth - 40, 820) + "px";
+    win.style.height = Math.min(window.innerHeight - 110, 560) + "px";
+    win.style.left = Math.max(20, (window.innerWidth - parseInt(win.style.width, 10)) / 2) + "px";
+    win.style.top = "68px";
 }
 </script>
 
