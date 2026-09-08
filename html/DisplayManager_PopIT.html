@@ -188,6 +188,46 @@ body {
     background: #0d0d0d;
 }
 
+.BrowserShell {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    gap: 8px;
+}
+
+.BrowserBar {
+    display: flex;
+    gap: 6px;
+}
+
+.BrowserAddress {
+    flex: 1;
+    min-width: 0;
+    padding: 7px 9px;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 6px;
+    background: rgba(0,0,0,0.35);
+    color: white;
+}
+
+.BrowserBar button {
+    padding: 0 14px;
+    border: 0;
+    border-radius: 6px;
+    background: #00a891;
+    color: white;
+    cursor: pointer;
+}
+
+.BrowserFrame {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    border: 0;
+    background: white;
+}
+
 /* resize handle */
 
 .ResizeHandle {
@@ -463,6 +503,59 @@ function openCalculator() {
     const content = '<iframe src="https://www.desmos.com/calculator" style="width:100%;height:100%;border:none;border-radius:12px;"></iframe>';
     createWindow("Calculator", content);
 }
+
+function openBrowser(initialUrl) {
+    const win = createWindow("WebOS Browser", '<div class="BrowserShell"><form class="BrowserBar"><input class="BrowserAddress" type="url" placeholder="https://example.com" autocomplete="off"><button type="submit">Go</button></form><iframe class="BrowserFrame" title="WebOS browser" sandbox="allow-forms allow-modals allow-popups allow-scripts allow-same-origin"></iframe></div>');
+    win.style.width = Math.min(window.innerWidth - 40, 900) + "px";
+    win.style.height = Math.min(window.innerHeight - 110, 620) + "px";
+    win.style.left = Math.max(20, (window.innerWidth - parseInt(win.style.width, 10)) / 2) + "px";
+    win.style.top = "68px";
+
+    const address = win.querySelector(".BrowserAddress");
+    const frame = win.querySelector(".BrowserFrame");
+    const navigate = (url) => {
+        try {
+            const parsed = new URL(url);
+            if (!["http:", "https:"].includes(parsed.protocol)) throw new Error("unsupported protocol");
+            address.value = parsed.href;
+            frame.src = parsed.href;
+        } catch (error) {
+            address.value = "";
+            address.placeholder = "Only http:// and https:// URLs are supported";
+        }
+    };
+    win.querySelector(".BrowserBar").addEventListener("submit", (event) => {
+        event.preventDefault();
+        navigate(address.value);
+    });
+    navigate(initialUrl || "https://example.com");
+    return win;
+}
+
+function launchApp(app) {
+    switch ((app || "terminal").toLowerCase()) {
+        case "browser":
+            return openBrowser();
+        case "calculator":
+            return openCalculator();
+        case "notes":
+            return createWindow("Notes", '<iframe src="/html/apps/notebook.html" style="width:100%;height:100%;border:none;"></iframe>');
+        case "terminal":
+        case "alpine":
+            return openEmulator();
+        default:
+            return createWindow("WebOS", "Unknown app: " + app);
+    }
+}
+
+window.addEventListener("message", (event) => {
+    if (event.origin !== window.location.origin || !event.data || event.data.source !== "webos-terminal") return;
+    if (event.data.action === "open-url") {
+        openBrowser(event.data.url);
+    } else if (event.data.action === "launch-app") {
+        launchApp(event.data.app);
+    }
+});
 
 function openEmulator() {
     launcher.classList.remove("active");

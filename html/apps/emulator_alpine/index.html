@@ -17,6 +17,27 @@
             padding: 10px;
         }
 
+        #mode-toolbar {
+            display: flex; align-items: center; gap: 8px;
+            padding-bottom: 8px; border-bottom: 1px solid #224422;
+            color: #9aa7b2; font-size: 12px;
+        }
+
+        #display-mode, #restart-guest {
+            background: #142014; color: #d8ffd8;
+            border: 1px solid #376337; border-radius: 4px;
+            font: inherit; padding: 4px 7px;
+        }
+
+        #restart-guest { cursor: pointer; }
+
+        #vga-display {
+            flex: 1; min-height: 0; overflow: auto;
+            display: none; background: #000; margin-bottom: 8px;
+        }
+
+        #vga-display canvas { display: block; max-width: 100%; }
+
         /* Displays the text rolling out from Alpine Linux */
         #output-display {
             flex: 1; overflow-y: auto; white-space: pre-wrap;
@@ -39,6 +60,10 @@
             color: #fff; font-family: inherit; font-size: 14px;
             outline: none; caret-color: #33ff33;
         }
+
+        .system { color: #9aa7b2; }
+        .command { color: #ffffff; }
+        .error { color: #ff8d8d; }
     </style>
     <!-- Load the mandatory v86 script orchestrator from your local directory -->
     <script src="/js/libv86.js"></script>
@@ -46,37 +71,138 @@
 <body>
 
     <div id="terminal-wrapper">
+        <div id="mode-toolbar">
+            <label for="display-mode">Display</label>
+            <select id="display-mode" aria-label="Alpine display mode">
+                <option value="serial">Serial console</option>
+                <option value="vga">VGA display</option>
+            </select>
+            <button id="restart-guest" type="button">Restart guest</button>
+            <span id="mode-status">Serial is recommended for command mode.</span>
+        </div>
         <!-- Terminal buffer output dumps here -->
-        <div id="output-display">System Status: Instantiating Alpine CPU thread...</div>
+        <div id="output-display"><span class="system">WebOS Terminal | Alpine Linux guest</span>\n</div>
+        <div id="vga-display" aria-label="Alpine VGA display"></div>
 
         <!-- Interactive Form Element for Inputs -->
         <div id="input-container">
-            <span id="prompt-label">alpine:~#</span>
-            <input type="text" id="user-input" autocomplete="off" autofocus placeholder="Type command here..." disabled />
+            <span id="prompt-label">webos:~$</span>
+            <input type="text" id="user-input" autocomplete="off" placeholder="Type webos or Linux command..." />
         </div>
     </div>
 
     <script>
         const outputDisplay = document.getElementById("output-display");
+        const vgaDisplay = document.getElementById("vga-display");
         const userInput = document.getElementById("user-input");
+        const promptLabel = document.getElementById("prompt-label");
+        const displayMode = document.getElementById("display-mode");
+        const modeStatus = document.getElementById("mode-status");
+        const restartGuest = document.getElementById("restart-guest");
         let emulator = null;
+        let guestReady = false;
 
-        function printToConsole(text) {
-            outputDisplay.textContent += text;
+        const savedMode = new URLSearchParams(window.location.search).get("display");
+        if (savedMode === "vga" || savedMode === "serial") displayMode.value = savedMode;
+
+        function isVgaMode() {
+            return displayMode.value === "vga";
+        }
+
+        function updateDisplayMode() {
+            const vga = isVgaMode();
+            outputDisplay.style.display = vga ? "none" : "block";
+            vgaDisplay.style.display = vga ? "block" : "none";
+            modeStatus.textContent = vga
+                ? "VGA sends typed input to the guest keyboard."
+                : "Serial is recommended for command mode.";
+            userInput.placeholder = vga
+                ? "Type into the Alpine VGA console..."
+                : "Type webos or Linux command...";
+        }
+
+        function printToConsole(text, className) {
+            const line = document.createElement("span");
+            line.className = className || "";
+            line.textContent = text;
+            outputDisplay.appendChild(line);
             outputDisplay.scrollTop = outputDisplay.scrollHeight; // Auto scroll down
+        }
+
+        function printLine(text, className) {
+            printToConsole(text + "\n", className);
+        }
+
+        function sendToWebOS(action, payload) {
+            if (window.parent !== window) {
+                window.parent.postMessage({ source: "webos-terminal", action, ...payload }, window.location.origin);
+                return true;
+            }
+            printLine("This terminal is not running inside WebOS.", "error");
+            return false;
+        }
+
+        function runWebOSCommand(command) {
+            const parts = command.trim().split(/\s+/);
+            const action = parts[1] || "help";
+            const argument = parts.slice(2).join(" ");
+
+            if (action === "help") {
+                printLine("webos open <url>     Open a URL in the WebOS browser");
+                printLine("webos apps            List installed WebOS apps");
+                printLine("webos launch <app>    Open a WebOS app");
+                printLine("webos status           Show desktop connection status");
+                return true;
+            }
+            if (action === "open") {
+                if (!/^https?:\/\//i.test(argument)) {
+                    printLine("Usage: webos open https://example.com", "error");
+                } else if (sendToWebOS("open-url", { url: argument })) {
+                    printLine("Opening " + argument);
+                }
+                return true;
+            }
+            if (action === "apps") {
+                printLine("Installed apps: terminal, browser, calculator, notes");
+                return true;
+            }
+            if (action === "launch") {
+                if (sendToWebOS("launch-app", { app: argument || "terminal" })) {
+                    printLine("Launching " + (argument || "terminal"));
+                }
+                return true;
+            }
+            if (action === "status") {
+                printLine("WebOS desktop: connected");
+                printLine("Alpine guest: " + (guestReady ? "ready" : "booting"));
+                return true;
+            }
+            printLine("Unknown webos command. Try: webos help", "error");
+            return true;
         }
 
         // 1. Initialize the Alpine WASM Environment
         window.addEventListener("load", () => {
-            printToConsole("\n[WebOS Initialization] Booting v86 Core...");
+            updateDisplayMode();
+            printLine("[WebOS] Starting Alpine guest...", "system");
 
-            emulator = new V86({
-                wasm_path: "v86.wasm",          // Engine assembly binary
-                bios: { url: "seabios.bin" },  // Main boot system bios
-                vga_bios: { url: "vgabios.bin" }, // Visual layout binary
-                cdrom: { url: "alpine.iso" }, // Your local Alpine file image
-                autostart: true
-            });
+            try {
+                const emulatorOptions = {
+                    wasm_path: "v86.wasm",
+                    bios: { url: "seabios.bin" },
+                    vga_bios: { url: "vgabios.bin" },
+                    cdrom: { url: "alpine.iso" },
+                    memory_size: 128 * 1024 * 1024,
+                    vga_memory_size: 8 * 1024 * 1024,
+                    autostart: true
+                };
+                if (isVgaMode()) emulatorOptions.screen_container = vgaDisplay;
+                emulator = new V86(emulatorOptions);
+            } catch (error) {
+                printLine("[Alpine] Failed to start: " + error.message, "error");
+                printLine("WebOS commands remain available.", "system");
+                return;
+            }
 
             // 2. Intercept character outputs streaming out of Linux
             emulator.add_listener("serial0-output-char", function(char) {
@@ -84,19 +210,50 @@
                 
                 // Once Alpine boots completely to shell login prompt, enable input box
                 if (outputDisplay.textContent.includes("login:") || outputDisplay.textContent.includes("localhost:~#")) {
-                    userInput.removeAttribute("disabled");
+                    guestReady = true;
+                    promptLabel.textContent = "alpine:~#";
                 }
             });
+
+            emulator.add_listener("emulator-ready", function() {
+                printLine("[Alpine] Guest CPU ready. Type webos help for desktop commands.", "system");
+            });
+
+            emulator.add_listener("emulator-started", function() {
+                modeStatus.textContent = isVgaMode()
+                    ? "VGA guest started. Click the display or type below."
+                    : "Serial guest started.";
+            });
+        });
+
+        displayMode.addEventListener("change", () => {
+            const query = new URLSearchParams(window.location.search);
+            query.set("display", displayMode.value);
+            window.location.search = query.toString();
+        });
+
+        restartGuest.addEventListener("click", () => {
+            if (emulator && typeof emulator.destroy === "function") emulator.destroy();
+            window.location.reload();
         });
 
         // 3. Handle processing input commands from the text box
         userInput.addEventListener("keydown", function(event) {
             if (event.key === "Enter") {
-                const command = userInput.value;
-                
-                if (emulator) {
-                    // Send text to the emulation machine over serial interface
-                    emulator.serial0_send(command + "\n");
+                const command = userInput.value.trim();
+                if (!command) return;
+                printLine((guestReady ? "alpine:~# " : "webos:~$ ") + command, "command");
+
+                if (/^webos(?:\s|$)/i.test(command)) {
+                    runWebOSCommand(command);
+                } else if (emulator) {
+                    if (isVgaMode() && typeof emulator.keyboard_send_text === "function") {
+                        emulator.keyboard_send_text(command + "\n");
+                    } else {
+                        emulator.serial0_send(command + "\n");
+                    }
+                } else {
+                    printLine("Alpine is still starting. Try `webos status`.", "error");
                 }
                 
                 userInput.value = ""; // Clear input for next command
