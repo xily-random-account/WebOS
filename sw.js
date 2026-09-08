@@ -1,50 +1,59 @@
-// sw.js - Located in the root directory
-const CACHE_NAME = 'WebOS-V0.1';
+const CACHE_NAME = 'webos-v2';
 
-// Add the exact paths to your core system files here
-const ASSETS_TO_CACHE = [
-   '/',
-   '/index.html',
-   '/html/DisplayManager_PopIT.html',
-	'/html/BootScreen_popcorn.html',
-   '/js/app.js',
-	'/css/universal_css_native_stuff.css'
+const CORE_ASSETS = [
+  '/',
+  '/index.html',
+  '/site.webmanifest',
+  '/html/BootScreen_popcorn.html',
+  '/html/DisplayManager_PopIT.html',
+  '/html/Launcher_Popo.html',
+  '/html/apps/emulator_alpine/index.html',
+  '/css/universal_css_native_stuff.css',
+  '/js/app.js',
+  '/js/libv86.js',
+  '/html/apps/emulator_alpine/emulator.js',
+  '/html/apps/emulator_alpine/seabios.bin',
+  '/html/apps/emulator_alpine/vgabios.bin',
+  '/html/apps/emulator_alpine/v86.wasm'
 ];
 
-// Install Event: Download and cache core OS assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('[WebOS Kernel] Caching system binaries and assets...');
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_ASSETS))
   );
-  self.skipWaiting(); // Force this worker to activate immediately
+  self.skipWaiting();
 });
 
-// Activate Event: Clear out old OS cache versions when you update the system
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cache) => {
-          if (cache !== CACHE_NAME) {
-            console.log('[WebOS Kernel] Clearing legacy system cache:', cache);
-            return caches.delete(cache);
-          }
-        })
-      );
-    })
+    caches.keys().then((cacheNames) => Promise.all(
+      cacheNames
+        .filter((cacheName) => cacheName !== CACHE_NAME)
+        .map((cacheName) => caches.delete(cacheName))
+    ))
   );
-  self.clients.claim(); // Take control of all open windows/iframes immediately
+  self.clients.claim();
 });
 
-// Fetch Event: Intercept network traffic. Try cache first, fall back to network.
 self.addEventListener('fetch', (event) => {
+  const request = event.request;
+  if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) {
+    return;
+  }
+
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      // Return the cached file if we have it, otherwise fetch from server/local server
-      return cachedResponse || fetch(event.request);
+    caches.match(request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+
+      return fetch(request).then((networkResponse) => {
+        if (networkResponse.ok) {
+          const responseCopy = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, responseCopy));
+        }
+        return networkResponse;
+      });
     })
   );
 });
