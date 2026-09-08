@@ -1,0 +1,9 @@
+{
+  "name": "webos",
+  "version": "1.0.0",
+  "private": true,
+  "description": "WebOS browser interface",
+  "engines": {
+    "node": ">=18"
+  }
+}
