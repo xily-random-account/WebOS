@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebOS Interactive Terminal</title>
+    <style>
+        html, body {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: #0d0d0d; color: #33ff33;
+            font-family: 'Courier New', Courier, monospace; overflow: hidden;
+        }
+
+        #terminal-wrapper {
+            display: flex; flex-direction: column;
+            width: 100%; height: 100%; box-sizing: border-box;
+            padding: 10px;
+        }
+
+        /* Displays the text rolling out from Alpine Linux */
+        #output-display {
+            flex: 1; overflow-y: auto; white-space: pre-wrap;
+            font-size: 14px; margin-bottom: 8px; line-height: 1.3;
+        }
+
+        /* Input field area */
+        #input-container {
+            display: flex; align-items: center;
+            border-top: 1px solid #224422; padding-top: 8px;
+        }
+
+        #prompt-label {
+            color: #88ff88; font-weight: bold; margin-right: 8px;
+            white-space: nowrap; user-select: none;
+        }
+
+        #user-input {
+            flex: 1; background: transparent; border: none;
+            color: #fff; font-family: inherit; font-size: 14px;
+            outline: none; caret-color: #33ff33;
+        }
+    </style>
+    <!-- Load the mandatory v86 script orchestrator from your local directory -->
+    <script src="../js/libv86.js"></script>
+</head>
+<body>
+
+    <div id="terminal-wrapper">
+        <!-- Terminal buffer output dumps here -->
+        <div id="output-display">System Status: Instantiating Alpine CPU thread...</div>
+
+        <!-- Interactive Form Element for Inputs -->
+        <div id="input-container">
+            <span id="prompt-label">alpine:~#</span>
+            <input type="text" id="user-input" autocomplete="off" autofocus placeholder="Type command here..." disabled />
+        </div>
+    </div>
+
+    <script>
+        const outputDisplay = document.getElementById("output-display");
+        const userInput = document.getElementById("user-input");
+        let emulator = null;
+
+        function printToConsole(text) {
+            outputDisplay.textContent += text;
+            outputDisplay.scrollTop = outputDisplay.scrollHeight; // Auto scroll down
+        }
+
+        // 1. Initialize the Alpine WASM Environment
+        window.addEventListener("load", () => {
+            printToConsole("\n[WebOS Initialization] Booting v86 Core...");
+
+            emulator = new V86({
+                wasm_path: "v86.wasm",          // Engine assembly binary
+                bios: { url: "seabios.bin" },  // Main boot system bios
+                vga_bios: { url: "vgabios.bin" }, // Visual layout binary
+                cdrom: { url: "alpine.iso" }, // Your local Alpine file image
+                autostart: true
+            });
+
+            // 2. Intercept character outputs streaming out of Linux
+            emulator.add_listener("serial0-output-char", function(char) {
+                printToConsole(char);
+                
+                // Once Alpine boots completely to shell login prompt, enable input box
+                if (outputDisplay.textContent.includes("login:") || outputDisplay.textContent.includes("localhost:~#")) {
+                    userInput.removeAttribute("disabled");
+                }
+            });
+        });
+
+        // 3. Handle processing input commands from the text box
+        userInput.addEventListener("keydown", function(event) {
+            if (event.key === "Enter") {
+                const command = userInput.value;
+                
+                if (emulator) {
+                    // Send text to the emulation machine over serial interface
+                    emulator.serial0_send(command + "\n");
+                }
+                
+                userInput.value = ""; // Clear input for next command
+            }
+        });
+
+        // Keep input box focused whenever clicking anywhere inside the app window
+        document.addEventListener("click", () => userInput.focus());
+    </script>
+</body>
+</html>

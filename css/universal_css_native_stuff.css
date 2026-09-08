@@ -1,0 +1,6 @@
+body {
+  -webkit-touch-callout: none; /* Disables long-press menus */
+  -webkit-user-select: none;   /* Disables text selection */
+  user-select: none;
+  -webkit-tap-highlight-color: transparent; /* Removes flash on click */
+}
