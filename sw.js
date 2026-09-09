@@ -1,4 +1,4 @@
-const CACHE_NAME = 'webos-v5';
+const CACHE_NAME = 'webos-v6';
 
 const CORE_ASSETS = [
   '/',
@@ -13,8 +13,7 @@ const CORE_ASSETS = [
   '/html/apps/emulator_alpine/asset-config.js',
   '/css/universal_css_native_stuff.css',
   '/js/app.js',
-  '/js/libv86.js',
-  '/html/apps/emulator_alpine/emulator.js',
+  '/html/apps/emulator_alpine/libv86.js',
   '/html/apps/emulator_alpine/seabios.bin',
   '/html/apps/emulator_alpine/vgabios.bin',
   '/html/apps/emulator_alpine/v86.wasm'
