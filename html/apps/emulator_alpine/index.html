@@ -32,6 +32,16 @@
 
         #restart-guest { cursor: pointer; }
 
+        #iso-picker {
+            max-width: 190px;
+            color: #d8ffd8;
+            font: inherit;
+        }
+
+        #iso-status {
+            color: #9aa7b2;
+        }
+
         #boot-progress {
             width: 120px;
             height: 6px;
@@ -95,6 +105,9 @@
                 <option value="vga">VGA display</option>
                 <option value="serial">Serial console</option>
             </select>
+            <label for="iso-picker">ISO</label>
+            <input id="iso-picker" type="file" accept=".iso,application/x-iso9660-image">
+            <span id="iso-status" aria-live="polite">GitHub LFS image</span>
             <button id="restart-guest" type="button">Restart guest</button>
             <progress id="boot-progress" max="100" value="0" aria-label="Alpine boot progress"></progress>
             <span id="mode-status">Preparing Alpine boot...</span>
@@ -121,8 +134,11 @@
         const modeStatus = document.getElementById("mode-status");
         const bootProgress = document.getElementById("boot-progress");
         const restartGuest = document.getElementById("restart-guest");
+        const isoPicker = document.getElementById("iso-picker");
+        const isoStatus = document.getElementById("iso-status");
         let emulator = null;
         let guestReady = false;
+        let customIsoUrl = null;
 
         const savedMode = new URLSearchParams(window.location.search).get("display");
         if (savedMode === "vga" || savedMode === "serial") displayMode.value = savedMode;
@@ -203,8 +219,13 @@
             return true;
         }
 
-        // 1. Initialize the Alpine WASM Environment
-        window.addEventListener("load", () => {
+        function startGuest(isoUrl) {
+            if (emulator && typeof emulator.destroy === "function") emulator.destroy();
+            emulator = null;
+            guestReady = false;
+            promptLabel.textContent = "webos:~$";
+            bootProgress.value = 0;
+            modeStatus.textContent = "Preparing Alpine boot...";
             updateDisplayMode();
             printLine("[WebOS] Starting Alpine guest...", "system");
 
@@ -214,7 +235,7 @@
                     wasm_path: asset("v86.wasm"),
                     bios: { url: asset("seabios.bin") },
                     vga_bios: { url: asset("vgabios.bin") },
-                    cdrom: { url: asset("alpine.iso") },
+                    cdrom: { url: isoUrl },
                     boot_order: 0x213,
                     memory_size: 128 * 1024 * 1024,
                     vga_memory_size: 8 * 1024 * 1024,
@@ -264,6 +285,18 @@
                     ? "VGA guest started. Click the display or type below."
                     : "Serial guest started.";
             });
+        }
+
+        // 1. Initialize with the GitHub LFS media URL; a local file can override it.
+        window.addEventListener("load", () => startGuest(window.WebOSAlpine.defaultIsoUrl));
+
+        isoPicker.addEventListener("change", () => {
+            const file = isoPicker.files[0];
+            if (!file) return;
+            if (customIsoUrl) URL.revokeObjectURL(customIsoUrl);
+            customIsoUrl = URL.createObjectURL(file);
+            isoStatus.textContent = file.name + " (local)";
+            startGuest(customIsoUrl);
         });
 
         displayMode.addEventListener("change", () => {
@@ -301,7 +334,10 @@
         });
 
         // Keep input box focused whenever clicking anywhere inside the app window
-        document.addEventListener("click", () => userInput.focus());
+        document.addEventListener("click", (event) => {
+            if (event.target.closest("select, input, textarea, button")) return;
+            userInput.focus();
+        });
     </script>
 </body>
 </html>

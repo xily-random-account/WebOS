@@ -1,4 +1,4 @@
-const CACHE_NAME = 'webos-v6';
+const CACHE_NAME = 'webos-v7';
 
 const CORE_ASSETS = [
   '/',
