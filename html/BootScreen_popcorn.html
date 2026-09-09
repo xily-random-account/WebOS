@@ -9,7 +9,7 @@
         margin: 0;
         background: black;
         color: white;
-        font-family: Arial, sans-serif;
+        font-family: system-ui, sans-serif;
         overflow: hidden;
     }
 
@@ -37,6 +37,26 @@
         margin: 20px auto;
         border-radius: 4px;
         overflow: hidden;
+    }
+
+    .boot-status {
+        min-height: 1.2em;
+        color: #a8b8c4;
+        font-size: 13px;
+    }
+
+    .skip-boot {
+        border: 1px solid #376337;
+        border-radius: 6px;
+        padding: 8px 12px;
+        background: #142014;
+        color: #d8ffd8;
+        cursor: pointer;
+    }
+
+    .skip-boot:focus-visible {
+        outline: 2px solid #7ee8dc;
+        outline-offset: 3px;
     }
 
     .loading-fill {
@@ -73,30 +93,53 @@
     @keyframes fadeOut {
         to { opacity: 0; }
     }
+
+    @media (prefers-reduced-motion: reduce) {
+        .popcorn-logo,
+        .loading-fill {
+            animation: none;
+        }
+
+        .loading-fill {
+            width: 100%;
+        }
+    }
 </style>
 </head>
 
 <body>
 
-<div class="boot-center" id="boot">
-    <div class="popcorn-logo">WebOS</div>
+<main class="boot-center" id="boot" aria-labelledby="boot-title">
+    <div class="popcorn-logo" id="boot-title">WebOS</div>
     <div class="loading-bar">
-        <div class="loading-fill"></div>
+        <div class="loading-fill" role="progressbar" aria-label="Starting WebOS"></div>
     </div>
-    <p>Copyright OpenFiddles @ 2026</p>
-</div>
+    <p class="boot-status" id="boot-status" aria-live="polite">Starting desktop services...</p>
+    <button class="skip-boot" id="skip-boot" type="button">Continue to desktop</button>
+</main>
 
 <script>
-    // After loading animation finishes, fade out and redirect
-    setTimeout(() => {
+    const boot = document.getElementById("boot");
+    const status = document.getElementById("boot-status");
+    const skipButton = document.getElementById("skip-boot");
+    let redirected = false;
+
+    function openDesktop() {
+        if (redirected) return;
+        redirected = true;
+        status.textContent = "Opening desktop...";
         const boot = document.getElementById("boot");
         boot.style.animation = "fadeOut 0.8s ease-out forwards";
-
         setTimeout(() => {
-            window.location.href = "../html/DisplayManager_PopIT.html"; // change to your desktop file
+            window.location.href = "../html/DisplayManager_PopIT.html";
         }, 800);
+    }
 
-    }, 5000); // wait for loading bar to finish
+    skipButton.addEventListener("click", openDesktop);
+    window.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") openDesktop();
+    });
+    setTimeout(openDesktop, 5000);
 </script>
 
 </body>
