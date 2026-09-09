@@ -9,12 +9,42 @@
 <style>
 /* ---------- GLOBAL ---------- */
 
+:root {
+    --accent: #00d4b8;
+    --accent-strong: #00a891;
+    --accent-wash: rgba(0, 212, 184, 0.16);
+    --surface: rgba(12, 18, 29, 0.72);
+    --line: rgba(255, 255, 255, 0.12);
+}
+
+* {
+    box-sizing: border-box;
+}
+
 body {
     margin: 0;
-    font-family: system-ui, sans-serif;
-    background: radial-gradient(circle at top, #1b2735, #090a0f);
+    font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+    background:
+        radial-gradient(circle at 16% 12%, rgba(0, 212, 184, 0.17), transparent 26%),
+        radial-gradient(circle at 84% 80%, rgba(255, 128, 90, 0.12), transparent 30%),
+        linear-gradient(135deg, #101a29 0%, #080b12 52%, #121019 100%);
     color: white;
     overflow: hidden;
+}
+
+button,
+input,
+textarea,
+select {
+    transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
 }
 
 body[data-theme="mint"] #open-launcher,
@@ -30,9 +60,9 @@ body[data-theme="sunset"] .DockIcon {
 /* ---------- LIQUID GLASS BASE ---------- */
 
 .glass {
-    background: rgba(20, 20, 30, 0.55);
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--surface);
+    border-radius: 14px;
+    border: 1px solid var(--line);
     box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
     backdrop-filter: blur(18px) saturate(140%);
 }
@@ -53,6 +83,7 @@ body[data-theme="sunset"] .DockIcon {
     background: linear-gradient(180deg, rgba(10,10,20,0.85), rgba(5,5,10,0.9));
     backdrop-filter: blur(16px);
     border-bottom: 1px solid rgba(255,255,255,0.06);
+    animation: slide-down 0.45s ease both;
 }
 
 #taskbar-left {
@@ -97,7 +128,7 @@ body[data-theme="sunset"] .DockIcon {
 
 .TaskButton:hover,
 .TaskButton.active {
-    background: rgba(255,255,255,0.12);
+    background: var(--accent-wash);
     border-color: rgba(255,255,255,0.12);
 }
 
@@ -114,7 +145,7 @@ body[data-theme="sunset"] .DockIcon {
     padding: 4px 10px;
     border: none;
     border-radius: 999px;
-    background: linear-gradient(135deg, #00eaff, #0066ff);
+    background: linear-gradient(135deg, #19ead0, #0088a8);
     color: white;
     cursor: pointer;
     box-shadow: 0 8px 18px rgba(0,0,0,0.4);
@@ -152,7 +183,7 @@ body[data-theme="sunset"] .DockIcon {
     width: 46px;
     height: 46px;
     border-radius: 14px;
-    background: linear-gradient(135deg, #00eaff, #0066ff);
+    background: linear-gradient(135deg, #19ead0, #0088a8);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -161,7 +192,12 @@ body[data-theme="sunset"] .DockIcon {
     cursor: pointer;
     box-shadow: 0 10px 22px rgba(0,0,0,0.5);
     transition: transform 0.15s ease, box-shadow 0.15s ease;
+    animation: dock-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+
+.DockIcon:nth-child(2) { animation-delay: 0.06s; }
+.DockIcon:nth-child(3) { animation-delay: 0.12s; }
+.DockIcon:nth-child(4) { animation-delay: 0.18s; }
 
 .DockIcon:hover {
     transform: translateY(-4px) scale(1.05);
@@ -180,6 +216,7 @@ body[data-theme="sunset"] .DockIcon {
     min-width: 260px;
     min-height: 150px;
     z-index: 10;
+    animation: window-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .WindowShell {
@@ -233,6 +270,10 @@ body[data-theme="sunset"] .DockIcon {
     display: none;
 }
 
+.WindowDesign.is-closing {
+    animation: window-out 0.18s ease forwards;
+}
+
 .WindowDesign.is-maximized {
     left: 12px !important;
     top: 54px !important;
@@ -284,7 +325,7 @@ body[data-theme="sunset"] .DockIcon {
 
 .AppPanel button {
     align-self: flex-start;
-    background: #00a891;
+    background: var(--accent-strong);
     border: 0;
     cursor: pointer;
 }
@@ -303,6 +344,24 @@ body[data-theme="sunset"] .DockIcon {
     padding: 8px;
     border-radius: 6px;
     background: rgba(255,255,255,0.06);
+}
+
+.FileToolbar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.AppOutput {
+    min-height: 90px;
+    margin: 0;
+    padding: 10px;
+    overflow: auto;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    background: rgba(0,0,0,0.28);
+    color: #b9ffe8;
+    white-space: pre-wrap;
 }
 
 .EmulatorWindow .WindowBody {
@@ -327,11 +386,15 @@ body[data-theme="sunset"] .DockIcon {
     width: 100%;
     height: 100%;
     gap: 8px;
+    min-height: 0;
 }
 
 .BrowserBar {
     display: flex;
     gap: 6px;
+    padding: 2px;
+    background: rgba(0, 0, 0, 0.18);
+    border-radius: 9px;
 }
 
 .BrowserAddress {
@@ -342,13 +405,14 @@ body[data-theme="sunset"] .DockIcon {
     border-radius: 6px;
     background: rgba(0,0,0,0.35);
     color: white;
+    user-select: text;
 }
 
 .BrowserBar button {
     padding: 0 14px;
     border: 0;
     border-radius: 6px;
-    background: #00a891;
+    background: var(--accent-strong);
     color: white;
     cursor: pointer;
 }
@@ -359,6 +423,36 @@ body[data-theme="sunset"] .DockIcon {
     width: 100%;
     border: 0;
     background: white;
+    border-radius: 8px;
+}
+
+.BrowserHint {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 1px solid rgba(255, 180, 110, 0.3);
+    border-radius: 8px;
+    background: rgba(115, 62, 28, 0.25);
+    color: #ffd7ae;
+    font-size: 12px;
+}
+
+.BrowserHint.visible {
+    display: flex;
+}
+
+.BrowserHint button {
+    flex: 0 0 auto;
+    padding: 6px 9px;
+    border: 0;
+    border-radius: 6px;
+    background: #ffb36b;
+    color: #24150c;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
 }
 
 /* resize handle */
@@ -405,6 +499,7 @@ body[data-theme="sunset"] .DockIcon {
     max-width: 720px;
     margin: 80px auto 0 auto;
     padding: 24px 26px 30px 26px;
+    animation: launcher-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .LauncherSearch {
@@ -435,7 +530,8 @@ body[data-theme="sunset"] .DockIcon {
 /* app icons */
 
 .AppIcon {
-    background: linear-gradient(135deg, rgba(0,234,255,0.9), rgba(0,102,255,0.9));
+    border: 0;
+    background: linear-gradient(135deg, rgba(25, 234, 208, 0.92), rgba(0, 124, 157, 0.92));
     border-radius: 20px;
     padding: 20px;
     text-align: center;
@@ -445,7 +541,35 @@ body[data-theme="sunset"] .DockIcon {
     box-shadow: 0 14px 30px rgba(0,0,0,0.6);
     cursor: pointer;
     transition: transform 0.16s ease, box-shadow 0.16s ease;
+    animation: icon-in 0.35s ease both;
+    font: inherit;
 }
+
+.AppIcon strong,
+.AppIcon span,
+.AppIcon small {
+    display: block;
+}
+
+.AppIcon strong {
+    margin-bottom: 6px;
+    font-size: 24px;
+}
+
+.AppIcon small {
+    margin-top: 4px;
+    font-size: 10px;
+    font-weight: 400;
+    opacity: 0.72;
+}
+
+.AppIcon:nth-child(2) { animation-delay: 0.04s; }
+.AppIcon:nth-child(3) { animation-delay: 0.08s; }
+.AppIcon:nth-child(4) { animation-delay: 0.12s; }
+.AppIcon:nth-child(5) { animation-delay: 0.16s; }
+.AppIcon:nth-child(6) { animation-delay: 0.20s; }
+.AppIcon:nth-child(7) { animation-delay: 0.24s; }
+.AppIcon:nth-child(8) { animation-delay: 0.28s; }
 
 .AppIcon:hover {
     transform: translateY(-4px) scale(1.05);
@@ -503,6 +627,43 @@ body[data-theme="sunset"] .DockIcon {
 .hidden {
     display: none;
 }
+
+@keyframes slide-down {
+    from { opacity: 0; transform: translateY(-12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes dock-rise {
+    from { opacity: 0; transform: translateY(18px) scale(0.9); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes window-in {
+    from { opacity: 0; transform: translateY(12px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes window-out {
+    to { opacity: 0; transform: scale(0.96); }
+}
+
+@keyframes launcher-in {
+    from { opacity: 0; transform: translateY(14px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes icon-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
 </style>
 </head>
 
@@ -545,12 +706,7 @@ body[data-theme="sunset"] .DockIcon {
         </div>
     </div>
 
-    <div id="dock" class="dock-glass">
-        <div class="DockIcon" onclick="openEmulator()" title="Open Alpine Linux">A</div>
-        <div class="DockIcon" onclick="openNotes()" title="Open Notes">N</div>
-        <div class="DockIcon" onclick="openCalculator()" title="Open Calculator">C</div>
-        <div class="DockIcon" onclick="openSettings()" title="Open Settings">S</div>
-    </div>
+    <div id="dock" class="dock-glass" aria-label="Favorite apps"></div>
 
 </div>
 
@@ -563,21 +719,14 @@ body[data-theme="sunset"] .DockIcon {
             <span>Press Esc to close</span>
         </div>
         <input class="LauncherSearch" id="launcher-search" type="search" placeholder="Search apps" autocomplete="off">
-        <div class="LauncherGrid">
-            <div class="AppIcon" data-app="alpine" onclick="openEmulator()">Alpine Linux</div>
-            <div class="AppIcon" data-app="notes" onclick="openNotes()">Notes</div>
-            <div class="AppIcon" data-app="calculator" onclick="openCalculator()">Calculator</div>
-            <div class="AppIcon" data-app="settings" onclick="openSettings()">Settings</div>
-            <div class="AppIcon" data-app="files" onclick="openFiles()">Files</div>
-            <div class="AppIcon" data-app="browser" onclick="openBrowser()">Browser</div>
-            <div class="AppIcon" data-app="terminal" onclick="openEmulator()">Terminal</div>
-            <div class="AppIcon" data-app="about" onclick="openAbout()">About</div>
-        </div>
+        <div class="LauncherGrid"></div>
     </div>
 </div>
 
 <!-- ---------- SCRIPT ---------- -->
 
+<script src="../js/os/desktop/filesystem.js"></script>
+<script src="../js/os/desktop/app-registry.js"></script>
 <script>
 /* WINDOW CREATION */
 
@@ -727,36 +876,86 @@ function openNotes() {
     const win = createWindow("Notes", '<div class="AppPanel"><h2>Notes</h2><textarea id="notes-editor" placeholder="Write something worth keeping..."></textarea><button type="button" id="notes-save">Save note</button><p id="notes-status" aria-live="polite"></p></div>');
     const editor = win.querySelector("#notes-editor");
     const status = win.querySelector("#notes-status");
-    editor.value = localStorage.getItem("webos-notes") || "";
-    win.querySelector("#notes-save").addEventListener("click", () => {
-        localStorage.setItem("webos-notes", editor.value);
-        status.textContent = "Saved locally at " + new Date().toLocaleTimeString();
+    WebOSFileSystem.read("/Documents/Notes.txt").then((entry) => {
+        editor.value = entry?.content || localStorage.getItem("webos-notes") || "";
     });
-    editor.addEventListener("input", () => localStorage.setItem("webos-notes", editor.value));
+    win.querySelector("#notes-save").addEventListener("click", () => {
+        WebOSFileSystem.putText("/Documents/Notes.txt", editor.value).then(() => {
+            localStorage.setItem("webos-notes", editor.value);
+            status.textContent = "Saved to Documents/Notes.txt at " + new Date().toLocaleTimeString();
+        });
+    });
     return win;
 }
 
 function openFiles() {
     closeLauncher();
-    const entries = [
-        ["Desktop", "Folder"],
-        ["Documents", "Folder"],
-        ["webos-notes", localStorage.getItem("webos-notes") ? "Saved note" : "Empty"]
-    ];
-    const list = entries.map(([name, type]) => `<li><span>${name}</span><small>${type}</small></li>`).join("");
-    return createWindow("Files", `<div class="AppPanel"><h2>Home</h2><ul class="AppList">${list}</ul><p>Local WebOS storage</p></div>`);
+    const win = createWindow("Files", '<div class="AppPanel"><h2>Home</h2><div class="FileToolbar"><button type="button" id="new-file">New file</button><button type="button" id="upload-file">Import</button><input id="file-picker" type="file" hidden></div><ul class="AppList" id="file-list"></ul><p id="file-status" aria-live="polite">IndexedDB filesystem</p></div>');
+    const list = win.querySelector("#file-list");
+    const status = win.querySelector("#file-status");
+    const renderFiles = async () => {
+        list.replaceChildren();
+        const entries = await WebOSFileSystem.list("/");
+        entries.forEach((entry) => {
+            const item = document.createElement("li");
+            const name = document.createElement("span");
+            name.textContent = entry.path.split("/").pop() || "/";
+            const type = document.createElement("small");
+            type.textContent = entry.type === "directory" ? "Folder" : "File";
+            item.append(name, type);
+            if (entry.type === "file") {
+                item.title = "Double-click to open";
+                item.ondblclick = async () => {
+                    const file = await WebOSFileSystem.read(entry.path);
+                    const editor = createWindow(entry.path.split("/").pop(), `<div class="AppPanel"><textarea class="file-editor"></textarea><button type="button" class="save-file">Save file</button></div>`);
+                    editor.querySelector(".file-editor").value = file?.content || "";
+                    editor.querySelector(".save-file").onclick = () => WebOSFileSystem.putText(entry.path, editor.querySelector(".file-editor").value);
+                };
+            }
+            list.appendChild(item);
+        });
+    };
+    win.querySelector("#new-file").onclick = async () => {
+        const name = window.prompt("File name", "Documents/New file.txt");
+        if (!name) return;
+        await WebOSFileSystem.putText("/" + name.replace(/^\/+/, ""), "");
+        status.textContent = "Created " + name;
+        renderFiles();
+    };
+    const picker = win.querySelector("#file-picker");
+    win.querySelector("#upload-file").onclick = () => picker.click();
+    picker.onchange = async () => {
+        const file = picker.files[0];
+        if (!file) return;
+        await WebOSFileSystem.putText("/Downloads/" + file.name, await file.text());
+        status.textContent = "Imported " + file.name;
+        renderFiles();
+    };
+    renderFiles();
+    return win;
 }
 
 function openSettings() {
     closeLauncher();
     const selectedTheme = localStorage.getItem("webos-theme") || "ocean";
-    const win = createWindow("Settings", `<div class="AppPanel"><h2>Settings</h2><label for="theme-choice">Accent theme</label><select id="theme-choice"><option value="ocean">Ocean</option><option value="mint">Mint</option><option value="sunset">Sunset</option></select><p>Changes are saved on this device.</p></div>`);
+    const win = createWindow("Better Settings", `<div class="AppPanel"><h2>Better Settings</h2><label for="theme-choice">Accent theme</label><select id="theme-choice"><option value="ocean">Ocean</option><option value="mint">Mint</option><option value="sunset">Sunset</option></select><label><input id="motion-choice" type="checkbox"> Reduce motion</label><button type="button" id="clear-storage">Reset WebOS data</button><p id="settings-status">Changes are saved on this device.</p></div>`);
     const choice = win.querySelector("#theme-choice");
     choice.value = selectedTheme;
     choice.addEventListener("change", () => {
         localStorage.setItem("webos-theme", choice.value);
         document.body.dataset.theme = choice.value;
     });
+    const motion = win.querySelector("#motion-choice");
+    motion.checked = localStorage.getItem("webos-reduced-motion") === "true";
+    motion.addEventListener("change", () => {
+        localStorage.setItem("webos-reduced-motion", motion.checked);
+        document.documentElement.style.setProperty("--motion-scale", motion.checked ? "0" : "1");
+    });
+    win.querySelector("#clear-storage").onclick = async () => {
+        await WebOSFileSystem.remove("/Documents/Notes.txt");
+        localStorage.removeItem("webos-notes");
+        win.querySelector("#settings-status").textContent = "Notes data reset.";
+    };
     return win;
 }
 
@@ -771,9 +970,82 @@ function openCalculator() {
     createWindow("Calculator", content);
 }
 
+function openCalendar() {
+    closeLauncher();
+    const win = createWindow("Calendar", '<div class="AppPanel"><h2>Calendar</h2><input id="calendar-date" type="date"><textarea id="calendar-note" placeholder="Add a note for this date..."></textarea><button type="button" id="calendar-save">Save event</button><p id="calendar-status" aria-live="polite"></p></div>');
+    const date = win.querySelector("#calendar-date");
+    const note = win.querySelector("#calendar-note");
+    date.value = new Date().toISOString().slice(0, 10);
+    const key = () => "/Documents/Calendar/" + date.value + ".txt";
+    date.onchange = async () => { note.value = (await WebOSFileSystem.read(key()))?.content || ""; };
+    date.onchange();
+    win.querySelector("#calendar-save").onclick = async () => {
+        await WebOSFileSystem.putText(key(), note.value);
+        win.querySelector("#calendar-status").textContent = "Saved for " + date.value;
+    };
+    return win;
+}
+
+function openSystemMonitor() {
+    closeLauncher();
+    const win = createWindow("System Monitor", '<div class="AppPanel"><h2>System Monitor</h2><ul class="AppList" id="system-stats"></ul></div>');
+    const stats = win.querySelector("#system-stats");
+    const update = () => {
+        const rows = [
+            ["Windows", document.querySelectorAll(".WindowDesign:not(#WindowTemplate):not(.is-minimized)").length],
+            ["Storage", "IndexedDB filesystem"],
+            ["Memory", performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) + " MB" : "Browser managed"]
+        ];
+        stats.replaceChildren(...rows.map(([label, value]) => {
+            const item = document.createElement("li");
+            item.innerHTML = `<span>${label}</span><small>${value}</small>`;
+            return item;
+        }));
+    };
+    update();
+    return win;
+}
+
+function openWasmLab() {
+    closeLauncher();
+    const win = createWindow("WASM Lab", '<div class="AppPanel"><h2>WASM Lab</h2><input id="wasm-file" type="file" accept=".wasm,application/wasm"><select id="wasm-export"><option>Load a module first</option></select><button type="button" id="wasm-run">Run export</button><pre id="wasm-output" class="AppOutput">Select a local WebAssembly module.</pre></div>');
+    const picker = win.querySelector("#wasm-file");
+    const exportsMenu = win.querySelector("#wasm-export");
+    const output = win.querySelector("#wasm-output");
+    let instance;
+    picker.onchange = async () => {
+        const file = picker.files[0];
+        if (!file) return;
+        try {
+            const bytes = await file.arrayBuffer();
+            const result = await WebAssembly.instantiate(bytes, {});
+            instance = result.instance;
+            exportsMenu.replaceChildren(...Object.keys(instance.exports).map((name) => new Option(name, name)));
+            output.textContent = "Loaded " + file.name + ". Select an exported function.";
+        } catch (error) {
+            output.textContent = "WASM load failed: " + error.message;
+        }
+    };
+    win.querySelector("#wasm-run").onclick = () => {
+        if (!instance) return;
+        const name = exportsMenu.value;
+        const exported = instance.exports[name];
+        if (typeof exported !== "function") {
+            output.textContent = name + " is not a callable function.";
+            return;
+        }
+        try {
+            output.textContent = name + "() => " + String(exported());
+        } catch (error) {
+            output.textContent = "Export failed: " + error.message;
+        }
+    };
+    return win;
+}
+
 function openBrowser(initialUrl) {
     closeLauncher();
-    const win = createWindow("WebOS Browser", '<div class="BrowserShell"><form class="BrowserBar"><input class="BrowserAddress" type="url" placeholder="https://example.com" autocomplete="off"><button type="submit">Go</button></form><iframe class="BrowserFrame" title="WebOS browser" sandbox="allow-forms allow-modals allow-popups allow-scripts allow-same-origin"></iframe></div>');
+    const win = createWindow("WebOS Browser", '<div class="BrowserShell"><form class="BrowserBar"><input class="BrowserAddress" type="url" placeholder="https://example.com" autocomplete="off"><button type="submit">Go</button></form><div class="BrowserHint" role="status"><span>This site does not allow embedded viewing.</span><button type="button" class="BrowserOpenExternal">Open in new tab</button></div><iframe class="BrowserFrame" title="WebOS browser" referrerpolicy="strict-origin-when-cross-origin" sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-scripts allow-same-origin"></iframe></div>');
     win.style.width = Math.min(window.innerWidth - 40, 900) + "px";
     win.style.height = Math.min(window.innerHeight - 110, 620) + "px";
     win.style.left = Math.max(20, (window.innerWidth - parseInt(win.style.width, 10)) / 2) + "px";
@@ -781,17 +1053,32 @@ function openBrowser(initialUrl) {
 
     const address = win.querySelector(".BrowserAddress");
     const frame = win.querySelector(".BrowserFrame");
+    const hint = win.querySelector(".BrowserHint");
+    const externalButton = win.querySelector(".BrowserOpenExternal");
+    let currentUrl = "";
+    let frameTimer;
     const navigate = (url) => {
         try {
             const parsed = new URL(url);
             if (!["http:", "https:"].includes(parsed.protocol)) throw new Error("unsupported protocol");
             address.value = parsed.href;
+            currentUrl = parsed.href;
+            hint.classList.remove("visible");
+            clearTimeout(frameTimer);
             frame.src = parsed.href;
+            frameTimer = setTimeout(() => hint.classList.add("visible"), 1800);
         } catch (error) {
             address.value = "";
             address.placeholder = "Only http:// and https:// URLs are supported";
         }
     };
+    externalButton.addEventListener("click", () => window.open(currentUrl, "_blank", "noopener,noreferrer"));
+    frame.addEventListener("load", () => {
+        try {
+            const title = frame.contentDocument?.title || "";
+            if (title.toLowerCase().includes("refused") || title.toLowerCase().includes("blocked")) hint.classList.add("visible");
+        } catch (error) {}
+    });
     win.querySelector(".BrowserBar").addEventListener("submit", (event) => {
         event.preventDefault();
         navigate(address.value);
@@ -801,25 +1088,7 @@ function openBrowser(initialUrl) {
 }
 
 function launchApp(app) {
-    switch ((app || "terminal").toLowerCase()) {
-        case "browser":
-            return openBrowser();
-        case "calculator":
-            return openCalculator();
-        case "notes":
-            return openNotes();
-        case "files":
-            return openFiles();
-        case "settings":
-            return openSettings();
-        case "about":
-            return openAbout();
-        case "terminal":
-        case "alpine":
-            return openEmulator();
-        default:
-            return createWindow("WebOS", "Unknown app: " + app);
-    }
+    return WebOSAppRegistry.launch((app || "terminal").toLowerCase());
 }
 
 window.addEventListener("message", (event) => {
@@ -842,6 +1111,23 @@ function openEmulator() {
     win.style.left = Math.max(20, (window.innerWidth - parseInt(win.style.width, 10)) / 2) + "px";
     win.style.top = "68px";
 }
+
+[
+    ["alpine", "Alpine Linux", "A", "Run the real v86 guest", "openEmulator", true],
+    ["browser", "Browser", "B", "Browse the web", "openBrowser", true],
+    ["files", "Files", "F", "Manage local files", "openFiles", true],
+    ["notes", "Notes", "N", "Write and save notes", "openNotes", false],
+    ["settings", "Better Settings", "S", "Tune your WebOS", "openSettings", true],
+    ["wasm", "WASM Lab", "W", "Run local .wasm modules", "openWasmLab", false],
+    ["calendar", "Calendar", "D", "Save dated events", "openCalendar", false],
+    ["monitor", "System Monitor", "M", "Inspect desktop state", "openSystemMonitor", false],
+    ["calculator", "Calculator", "C", "Open the calculator", "openCalculator", false],
+    ["about", "About", "i", "About WebPopcorn OS", "openAbout", false]
+].forEach(([id, name, icon, description, handler, dock]) => {
+    WebOSAppRegistry.register({ id, name, icon, description, handler, dock });
+});
+WebOSFileSystem.ensureSeeded();
+WebOSAppRegistry.render();
 
 function updateClock() {
     document.getElementById("clock").textContent = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });

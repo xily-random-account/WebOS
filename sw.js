@@ -1,4 +1,4 @@
-const CACHE_NAME = 'webos-v4';
+const CACHE_NAME = 'webos-v5';
 
 const CORE_ASSETS = [
   '/',
@@ -6,8 +6,11 @@ const CORE_ASSETS = [
   '/site.webmanifest',
   '/html/BootScreen_popcorn.html',
   '/html/DisplayManager_PopIT.html',
+  '/js/os/desktop/app-registry.js',
+  '/js/os/desktop/filesystem.js',
   '/html/Launcher_Popo.html',
   '/html/apps/emulator_alpine/index.html',
+  '/html/apps/emulator_alpine/asset-config.js',
   '/css/universal_css_native_stuff.css',
   '/js/app.js',
   '/js/libv86.js',
@@ -37,7 +40,8 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const request = event.request;
-  if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) {
+  const requestUrl = new URL(request.url);
+  if (request.method !== 'GET' || requestUrl.origin !== self.location.origin || requestUrl.pathname.endsWith('.iso')) {
     return;
   }
 

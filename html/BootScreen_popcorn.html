@@ -59,6 +59,124 @@
         outline-offset: 3px;
     }
 
+    .auth-screen {
+        display: none;
+        position: fixed;
+        inset: 0;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background:
+            radial-gradient(circle at 18% 20%, rgba(0, 212, 184, 0.18), transparent 30%),
+            linear-gradient(135deg, #101a29, #080b12 65%, #17111b);
+    }
+
+    .auth-screen.active {
+        display: flex;
+    }
+
+    .auth-card {
+        width: min(420px, 100%);
+        padding: 28px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 18px;
+        background: rgba(11, 18, 29, 0.82);
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(18px);
+    }
+
+    .auth-card h1,
+    .auth-card p {
+        margin: 0;
+    }
+
+    .auth-card h1 {
+        font-size: 26px;
+    }
+
+    .auth-copy {
+        margin-top: 8px !important;
+        color: #a8b8c4;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+    .auth-form {
+        display: grid;
+        gap: 10px;
+        margin-top: 22px;
+    }
+
+    .auth-form label {
+        color: #d5e3ec;
+        font-size: 12px;
+    }
+
+    .auth-form input {
+        box-sizing: border-box;
+        width: 100%;
+        margin-top: 5px;
+        padding: 11px 12px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.3);
+        color: white;
+        font: inherit;
+    }
+
+    .auth-form button,
+    .provider-button {
+        padding: 10px 12px;
+        border: 0;
+        border-radius: 8px;
+        cursor: pointer;
+        font: inherit;
+    }
+
+    .auth-form button[type="submit"] {
+        margin-top: 4px;
+        background: #00b89f;
+        color: #061713;
+        font-weight: 700;
+    }
+
+    .provider-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-top: 14px;
+    }
+
+    .provider-button {
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        background: rgba(255, 255, 255, 0.07);
+        color: white;
+    }
+
+    .auth-switch,
+    .guest-button {
+        display: block;
+        width: 100%;
+        margin-top: 14px;
+        border: 0;
+        background: transparent;
+        color: #7ee8dc;
+        cursor: pointer;
+        font: inherit;
+        font-size: 12px;
+    }
+
+    .auth-status {
+        min-height: 1.3em;
+        margin-top: 12px !important;
+        color: #ffcc9b;
+        font-size: 12px;
+    }
+
+    .auth-status.success {
+        color: #9affd7;
+    }
+
     .loading-fill {
         width: 0%;
         height: 100%;
@@ -118,28 +236,122 @@
     <button class="skip-boot" id="skip-boot" type="button">Continue to desktop</button>
 </main>
 
+<main class="auth-screen" id="auth-screen" aria-labelledby="auth-title">
+    <section class="auth-card">
+        <h1 id="auth-title">Welcome to WebOS</h1>
+        <p class="auth-copy" id="auth-copy">Create a local account for this browser. Your password is hashed and never sent anywhere.</p>
+        <form class="auth-form" id="auth-form">
+            <label>Email<input id="auth-email" type="email" autocomplete="email" required></label>
+            <label>Password<input id="auth-password" type="password" minlength="8" autocomplete="new-password" required></label>
+            <button type="submit" id="auth-submit">Create local account</button>
+        </form>
+        <div class="provider-row">
+            <button class="provider-button" type="button" data-provider="Google">Google</button>
+            <button class="provider-button" type="button" data-provider="Microsoft">Microsoft</button>
+        </div>
+        <button class="auth-switch" type="button" id="auth-switch">Already have an account? Sign in</button>
+        <button class="auth-switch" type="button" id="auth-reset">Forgot the local password? Reset account</button>
+        <button class="guest-button" type="button" id="guest-button">Continue as guest</button>
+        <p class="auth-status" id="auth-status" aria-live="polite"></p>
+    </section>
+</main>
+
 <script>
     const boot = document.getElementById("boot");
     const status = document.getElementById("boot-status");
     const skipButton = document.getElementById("skip-boot");
     let redirected = false;
+    let signingIn = false;
+    const authScreen = document.getElementById("auth-screen");
+    const authForm = document.getElementById("auth-form");
+    const authTitle = document.getElementById("auth-title");
+    const authCopy = document.getElementById("auth-copy");
+    const authSubmit = document.getElementById("auth-submit");
+    const authSwitch = document.getElementById("auth-switch");
+    const authStatus = document.getElementById("auth-status");
+
+    function showAuth() {
+        boot.style.display = "none";
+        authScreen.classList.add("active");
+        document.getElementById("auth-email").focus();
+    }
+
+    function setAuthMode(signIn) {
+        signingIn = signIn;
+        authTitle.textContent = signIn ? "Sign in to WebOS" : "Welcome to WebOS";
+        authCopy.textContent = signIn
+            ? "Sign in to the local account saved in this browser."
+            : "Create a local account for this browser. Your password is hashed and never sent anywhere.";
+        authSubmit.textContent = signIn ? "Sign in" : "Create local account";
+        authSwitch.textContent = signIn ? "Need an account? Sign up" : "Already have an account? Sign in";
+        document.getElementById("auth-password").autocomplete = signIn ? "current-password" : "new-password";
+        authStatus.textContent = "";
+    }
+
+    async function passwordHash(email, password) {
+        const data = new TextEncoder().encode(email.trim().toLowerCase() + ":" + password);
+        const digest = await crypto.subtle.digest("SHA-256", data);
+        return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+    }
 
     function openDesktop() {
         if (redirected) return;
         redirected = true;
         status.textContent = "Opening desktop...";
-        const boot = document.getElementById("boot");
-        boot.style.animation = "fadeOut 0.8s ease-out forwards";
         setTimeout(() => {
             window.location.href = "../html/DisplayManager_PopIT.html";
-        }, 800);
+        }, 300);
     }
 
-    skipButton.addEventListener("click", openDesktop);
+    function finishAuth(email) {
+        sessionStorage.setItem("webos-session", email);
+        authStatus.className = "auth-status success";
+        authStatus.textContent = "Signed in. Opening desktop...";
+        setTimeout(openDesktop, 350);
+    }
+
+    skipButton.addEventListener("click", showAuth);
     window.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" || event.key === " ") openDesktop();
+        if (!authScreen.classList.contains("active") && (event.key === "Enter" || event.key === " ")) showAuth();
     });
-    setTimeout(openDesktop, 5000);
+    authSwitch.addEventListener("click", () => setAuthMode(!signingIn));
+    document.getElementById("auth-reset").addEventListener("click", () => {
+        if (!window.confirm("Remove the local WebOS account from this browser?")) return;
+        localStorage.removeItem("webos-account");
+        setAuthMode(false);
+        authStatus.textContent = "Local account removed. You can create a new one.";
+    });
+    document.querySelectorAll("[data-provider]").forEach((button) => {
+        button.addEventListener("click", () => {
+            authStatus.className = "auth-status";
+            authStatus.textContent = button.dataset.provider + " sign-in needs an OAuth client ID and server callback. Use email/password for local mode.";
+        });
+    });
+    document.getElementById("guest-button").addEventListener("click", openDesktop);
+    authForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const email = document.getElementById("auth-email").value.trim().toLowerCase();
+        const password = document.getElementById("auth-password").value;
+        const saved = JSON.parse(localStorage.getItem("webos-account") || "null");
+        if (signingIn) {
+            if (!saved || saved.email !== email || saved.passwordHash !== await passwordHash(email, password)) {
+                authStatus.textContent = "Email or password is incorrect.";
+                return;
+            }
+            finishAuth(email);
+            return;
+        }
+        if (saved) {
+            authStatus.textContent = "A local account already exists. Sign in instead.";
+            return;
+        }
+        localStorage.setItem("webos-account", JSON.stringify({ email, passwordHash: await passwordHash(email, password), createdAt: Date.now() }));
+        finishAuth(email);
+    });
+    setTimeout(() => {
+        if (sessionStorage.getItem("webos-session")) openDesktop();
+        else showAuth();
+    }, 5000);
 </script>
 
 </body>

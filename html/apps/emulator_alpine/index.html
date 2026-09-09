@@ -21,6 +21,7 @@
             display: flex; align-items: center; gap: 8px;
             padding-bottom: 8px; border-bottom: 1px solid #224422;
             color: #9aa7b2; font-size: 12px;
+            flex-wrap: wrap;
         }
 
         #display-mode, #restart-guest {
@@ -30,6 +31,12 @@
         }
 
         #restart-guest { cursor: pointer; }
+
+        #boot-progress {
+            width: 120px;
+            height: 6px;
+            accent-color: #33ff33;
+        }
 
         #vga-display {
             flex: 1; min-height: 0; overflow: auto;
@@ -67,6 +74,7 @@
     </style>
     <!-- Load the mandatory v86 script orchestrator from your local directory -->
     <script src="/js/libv86.js"></script>
+    <script src="asset-config.js"></script>
 </head>
 <body>
 
@@ -78,10 +86,11 @@
                 <option value="vga">VGA display</option>
             </select>
             <button id="restart-guest" type="button">Restart guest</button>
-            <span id="mode-status">Serial is recommended for command mode.</span>
+            <progress id="boot-progress" max="100" value="0" aria-label="Alpine boot progress"></progress>
+            <span id="mode-status">Preparing Alpine boot...</span>
         </div>
         <!-- Terminal buffer output dumps here -->
-        <div id="output-display"><span class="system">WebOS Terminal | Alpine Linux guest</span>\n</div>
+        <div id="output-display"><span class="system">WebOS Terminal | Alpine Linux guest</span></div>
         <div id="vga-display" aria-label="Alpine VGA display"></div>
 
         <!-- Interactive Form Element for Inputs -->
@@ -98,6 +107,7 @@
         const promptLabel = document.getElementById("prompt-label");
         const displayMode = document.getElementById("display-mode");
         const modeStatus = document.getElementById("mode-status");
+        const bootProgress = document.getElementById("boot-progress");
         const restartGuest = document.getElementById("restart-guest");
         let emulator = null;
         let guestReady = false;
@@ -187,19 +197,23 @@
             printLine("[WebOS] Starting Alpine guest...", "system");
 
             try {
+                const asset = window.WebOSAlpine.asset;
                 const emulatorOptions = {
-                    wasm_path: "v86.wasm",
-                    bios: { url: "seabios.bin" },
-                    vga_bios: { url: "vgabios.bin" },
-                    cdrom: { url: "alpine.iso" },
+                    wasm_path: asset("v86.wasm"),
+                    bios: { url: asset("seabios.bin") },
+                    vga_bios: { url: asset("vgabios.bin") },
+                    cdrom: { url: asset("alpine.iso") },
+                    boot_order: 0x213,
                     memory_size: 128 * 1024 * 1024,
                     vga_memory_size: 8 * 1024 * 1024,
-                    autostart: true
+                    autostart: true,
+                    screen_container: vgaDisplay
                 };
-                if (isVgaMode()) emulatorOptions.screen_container = vgaDisplay;
                 emulator = new V86(emulatorOptions);
             } catch (error) {
                 printLine("[Alpine] Failed to start: " + error.message, "error");
+                modeStatus.textContent = "Boot failed. Check the ISO and v86 assets.";
+                bootProgress.value = 0;
                 printLine("WebOS commands remain available.", "system");
                 return;
             }
@@ -217,6 +231,19 @@
 
             emulator.add_listener("emulator-ready", function() {
                 printLine("[Alpine] Guest CPU ready. Type webos help for desktop commands.", "system");
+                modeStatus.textContent = "Alpine guest ready.";
+                bootProgress.value = 100;
+            });
+
+            emulator.add_listener("download-progress", function(progress) {
+                if (!progress || !progress.total) return;
+                const percent = Math.round((progress.loaded / progress.total) * 100);
+                bootProgress.value = percent;
+                modeStatus.textContent = "Loading " + (progress.file_name || "v86 asset") + "... " + percent + "%";
+            });
+
+            emulator.add_listener("emulator-stopped", function() {
+                modeStatus.textContent = "Alpine guest stopped.";
             });
 
             emulator.add_listener("emulator-started", function() {
