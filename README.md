@@ -13,7 +13,7 @@ Cross-Origin-Opener-Policy: same-origin
 Cross-Origin-Embedder-Policy: require-corp
 ```
 
-The included `vercel.json` applies them to the Alpine emulator route. Use HTTPS in production; localhost development also requires both headers.
+The included `vercel.json` applies them to the whole site because the top-level browsing context must also be isolated. Use HTTPS in production; localhost development also requires both headers. GitHub Pages cannot set custom response headers, so deploy this project through Vercel, Netlify, or a reverse proxy that supports these headers.
 
 ## Credited and By?
 This is an idea created by [XiLy](https://GitHub.com/xi-self13) who owns [OpenFiddles](https://GitHub.com/OpenFiddles).
