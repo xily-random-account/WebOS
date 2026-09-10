@@ -1,4 +1,4 @@
-const CACHE_NAME = 'webos-v7';
+const CACHE_NAME = 'webos-v8';
 
 const CORE_ASSETS = [
   '/',
@@ -12,11 +12,7 @@ const CORE_ASSETS = [
   '/html/apps/emulator_alpine/index.html',
   '/html/apps/emulator_alpine/asset-config.js',
   '/css/universal_css_native_stuff.css',
-  '/js/app.js',
-  '/html/apps/emulator_alpine/libv86.js',
-  '/html/apps/emulator_alpine/seabios.bin',
-  '/html/apps/emulator_alpine/vgabios.bin',
-  '/html/apps/emulator_alpine/v86.wasm'
+  '/js/app.js'
 ];
 
 self.addEventListener('install', (event) => {

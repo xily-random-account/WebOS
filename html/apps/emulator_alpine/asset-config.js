@@ -1,6 +1,3 @@
 window.WebOSAlpine = Object.freeze({
-    defaultIsoUrl: "https://media.githubusercontent.com/media/xily-random-account/WebOS/main/html/apps/emulator_alpine/alpine.iso",
-    asset(name) {
-        return new URL(name, document.baseURI).href;
-    }
+    rootfsUrl: "https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/x86_64/alpine-minirootfs-3.22.1-x86_64.tar.gz"
 });
