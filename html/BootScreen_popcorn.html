@@ -273,7 +273,7 @@
     async function warmAlpineRootfs() {
         try {
             status.textContent = "Warming Alpine container...";
-            const cache = await caches.open("webos-v9");
+            const cache = await caches.open("webos-v10");
             const image = "/html/apps/emulator_alpine/alpine.ext2";
             if (!await cache.match(image)) {
                 const response = await fetch(image);
