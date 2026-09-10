@@ -270,6 +270,24 @@
     const authSwitch = document.getElementById("auth-switch");
     const authStatus = document.getElementById("auth-status");
 
+    async function warmAlpineRootfs() {
+        try {
+            status.textContent = "Warming Alpine container...";
+            const cache = await caches.open("webos-v9");
+            const image = "/html/apps/emulator_alpine/alpine.ext2";
+            if (!await cache.match(image)) {
+                const response = await fetch(image);
+                if (!response.ok) throw new Error("root filesystem request failed");
+                await cache.put(image, response);
+            }
+            status.textContent = "Desktop services ready.";
+        } catch (error) {
+            status.textContent = "Desktop services ready. Alpine will load when opened.";
+        }
+    }
+
+    warmAlpineRootfs();
+
     function showAuth() {
         boot.style.display = "none";
         authScreen.classList.add("active");

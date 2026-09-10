@@ -1,4 +1,4 @@
-const CACHE_NAME = 'webos-v8';
+const CACHE_NAME = 'webos-v9';
 
 const CORE_ASSETS = [
   '/',
@@ -41,6 +41,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  if (requestUrl.pathname === '/html/apps/emulator_alpine/alpine.ext2' && request.headers.has('range')) {
+    event.respondWith(serveRange(request));
+    return;
+  }
+
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
       if (cachedResponse) {
@@ -57,3 +62,35 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
+async function serveRange(request) {
+  const cache = await caches.open(CACHE_NAME);
+  let response = await cache.match('/html/apps/emulator_alpine/alpine.ext2');
+  if (!response) {
+    response = await fetch('/html/apps/emulator_alpine/alpine.ext2');
+    if (!response.ok) return response;
+    await cache.put('/html/apps/emulator_alpine/alpine.ext2', response.clone());
+  }
+
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  const range = request.headers.get('range').match(/bytes=(\d+)-(\d*)/);
+  if (!range) return new Response(bytes, { status: 200, headers: response.headers });
+
+  const start = Number(range[1]);
+  const requestedEnd = range[2] ? Number(range[2]) : bytes.length - 1;
+  const end = Math.min(requestedEnd, bytes.length - 1);
+  if (start >= bytes.length || start > end) {
+    return new Response(null, { status: 416, headers: { 'Content-Range': `bytes */${bytes.length}` } });
+  }
+
+  return new Response(bytes.slice(start, end + 1), {
+    status: 206,
+    headers: {
+      'Accept-Ranges': 'bytes',
+      'Content-Length': String(end - start + 1),
+      'Content-Range': `bytes ${start}-${end}/${bytes.length}`,
+      'Content-Type': 'application/octet-stream',
+      'ETag': 'webos-alpine-ext2'
+    }
+  });
+}
