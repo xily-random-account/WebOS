@@ -36,7 +36,7 @@
     </div>
 
     <script type="module">
-        import { Linux } from "https://cxrtnc.leaningtech.com/1.0.8/cx.esm.js";
+        import { Linux, HttpBytesDevice } from "https://cxrtnc.leaningtech.com/1.0.8/cx.esm.js";
 
         const outputDisplay = document.getElementById("output-display");
         const userInput = document.getElementById("user-input");
@@ -121,8 +121,9 @@
             printLine("[WebOS] Starting Alpine userspace with CheerpX...", "system");
 
             try {
+                const rootfs = await HttpBytesDevice.create(window.WebOSAlpine.rootfsUrl);
                 linux = await Linux.create({
-                    mounts: [{ type: "tar", path: "/", url: window.WebOSAlpine.rootfsUrl }]
+                    mounts: [{ type: "ext2", path: "/", dev: rootfs }]
                 });
                 bootProgress.value = 60;
                 modeStatus.textContent = "Starting Alpine shell...";
@@ -138,7 +139,8 @@
                 modeStatus.textContent = "Alpine shell ready.";
                 printLine("\n[Alpine] Guest ready. Type webos help for desktop commands.", "system");
             } catch (error) {
-                printLine("[Alpine] Failed to start: " + error.message, "error");
+                const detail = error && error.message ? error.message : String(error);
+                printLine("[Alpine] Failed to start: " + detail, "error");
                 modeStatus.textContent = "Boot failed. Check the root filesystem network request.";
                 bootProgress.value = 0;
                 printLine("WebOS commands remain available.", "system");

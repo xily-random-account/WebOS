@@ -11,6 +11,7 @@ const CORE_ASSETS = [
   '/html/Launcher_Popo.html',
   '/html/apps/emulator_alpine/index.html',
   '/html/apps/emulator_alpine/asset-config.js',
+  '/html/apps/emulator_alpine/alpine.ext2',
   '/css/universal_css_native_stuff.css',
   '/js/app.js'
 ];
