@@ -30,6 +30,8 @@
             launcherButton.className = "AppIcon";
             launcherButton.type = "button";
             launcherButton.dataset.app = definition.id;
+                launcherButton.dataset.search = [definition.name, definition.description, definition.id].join(" ").toLowerCase();
+                launcherButton.setAttribute("aria-label", definition.name + ": " + definition.description);
             launcherButton.innerHTML = `<strong>${definition.icon}</strong><span>${definition.name}</span><small>${definition.description}</small>`;
             launcherButton.addEventListener("click", () => launch(definition.id));
             grid.appendChild(launcherButton);

@@ -720,6 +720,8 @@ body[data-theme="sunset"] .DockIcon {
         </div>
         <input class="LauncherSearch" id="launcher-search" type="search" placeholder="Search apps" autocomplete="off">
         <div class="LauncherGrid"></div>
+            <input class="LauncherSearch" id="launcher-search" type="search" placeholder="Search apps" autocomplete="off" aria-controls="launcher-grid">
+            <div class="LauncherGrid" id="launcher-grid"></div>
     </div>
 </div>
 
@@ -1039,21 +1041,49 @@ function openWasmLab() {
         } catch (error) {
             output.textContent = "Export failed: " + error.message;
         }
+
+            .AppIcon.is-selected {
+                outline: 2px solid var(--accent);
+                outline-offset: 3px;
+                transform: translateY(-3px);
+            }
     };
     return win;
 }
+            const launcherSearch = document.getElementById("launcher-search");
 
 function openBrowser(initialUrl) {
     closeLauncher();
-    const win = createWindow("WebOS Browser", '<div class="BrowserShell"><form class="BrowserBar"><input class="BrowserAddress" type="url" placeholder="https://example.com" autocomplete="off"><button type="submit">Go</button></form><div class="BrowserHint" role="status"><span>This site does not allow embedded viewing.</span><button type="button" class="BrowserOpenExternal">Open in new tab</button></div><iframe class="BrowserFrame" title="WebOS browser" referrerpolicy="strict-origin-when-cross-origin" sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-scripts allow-same-origin"></iframe></div>');
+                launcherSearch.focus();
+                launcherSearch.select();
     win.style.width = Math.min(window.innerWidth - 40, 900) + "px";
     win.style.height = Math.min(window.innerHeight - 110, 620) + "px";
-    win.style.left = Math.max(20, (window.innerWidth - parseInt(win.style.width, 10)) / 2) + "px";
+            launcherSearch.addEventListener("input", (event) => {
     win.style.top = "68px";
 
-    const address = win.querySelector(".BrowserAddress");
+                    icon.hidden = query !== "" && !icon.dataset.search.includes(query);
     const frame = win.querySelector(".BrowserFrame");
+                const firstVisible = document.querySelector(".AppIcon:not([hidden])");
+                document.querySelectorAll(".AppIcon").forEach((icon) => icon.classList.remove("is-selected"));
+                if (firstVisible) firstVisible.classList.add("is-selected");
     const hint = win.querySelector(".BrowserHint");
+
+            launcherSearch.addEventListener("keydown", (event) => {
+                const visibleApps = [...document.querySelectorAll(".AppIcon:not([hidden])")];
+                if (!visibleApps.length) return;
+                const selectedIndex = visibleApps.findIndex((icon) => icon.classList.contains("is-selected"));
+                if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+                    event.preventDefault();
+                    const direction = event.key === "ArrowDown" ? 1 : -1;
+                    const nextIndex = (selectedIndex + direction + visibleApps.length) % visibleApps.length;
+                    visibleApps.forEach((icon, index) => icon.classList.toggle("is-selected", index === nextIndex));
+                    visibleApps[nextIndex].scrollIntoView({ block: "nearest" });
+                }
+                if (event.key === "Enter") {
+                    event.preventDefault();
+                    visibleApps[selectedIndex < 0 ? 0 : selectedIndex].click();
+                }
+            });
     const externalButton = win.querySelector(".BrowserOpenExternal");
     let currentUrl = "";
     let frameTimer;
